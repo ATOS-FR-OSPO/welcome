@@ -2,3 +2,4 @@
 
 screen animation
 
+(c) 2026
