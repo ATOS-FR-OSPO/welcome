@@ -19,7 +19,7 @@ const ctx2D = canvas2D.getContext('2d');
 // Canvas 2D pour le logo ondulé
 const logoCanvas = document.createElement('canvas');
 logoCanvas.style.position = 'fixed';
-logoCanvas.style.top = '20px';
+logoCanvas.style.top = '-150px';
 logoCanvas.style.left = '50%';
 logoCanvas.style.transform = 'translateX(-50%)';
 logoCanvas.style.pointerEvents = 'none';
@@ -67,7 +67,7 @@ const fragmentShader = `
   
   // Couleurs ATOS
   const vec3 ATOS_BLUE = vec3(0.0, 0.451, 0.902);      // #0073E6
-  const vec3 ATOS_ORANGE = vec3(0.0, 0.0, 0.361);    // #00005c
+  const vec3 ATOS_ORANGE = vec3(0.808, 0.808, 0.808);    // #cecece
   const vec3 ATOS_WHITE = vec3(1.0, 1.0, 1.0);
   const vec3 ATOS_DARK = vec3(0.05, 0.16, 0.26);   // #0a2a43
   
@@ -229,8 +229,13 @@ function drawAnimatedLogo() {
   if (!logoImage) return;
   
   const tSec = performance.now() * 0.001;
-  const logoWidth = 600;
-  const logoHeight = 240;
+  const logoWidth = 512;
+  const logoHeight = 360;
+  const logoScale = 0.78;
+  const drawWidth = logoWidth * logoScale;
+  const drawHeight = logoHeight * logoScale;
+  const offsetX = (logoWidth - drawWidth) * 0.5;
+  const offsetY = (logoHeight - drawHeight) * 0.5;
   const lineHeight = 2; // hauteur de chaque découpe
   const waveAmp = 8; // amplitude de l'ondulation
   const waveFreq = 0.5; // fréquence de l'ondulation
@@ -265,11 +270,127 @@ function drawAnimatedLogo() {
     logoCtx.clip();
     
     // Dessiner l'image
-    logoCtx.drawImage(logoImage, 0, 0, logoImg.width, logoImg.height, 0, 0, logoWidth, logoHeight);
+    logoCtx.drawImage(
+      logoImage,
+      0,
+      0,
+      logoImg.width,
+      logoImg.height,
+      offsetX,
+      offsetY,
+      drawWidth,
+      drawHeight
+    );
     
     // Restaurer le contexte
     logoCtx.restore();
   }
+}
+
+// Fonction pour dessiner WELCOME au centre de l'ecran
+function drawCenterWelcome() {
+  const width = canvas2D.width;
+  const height = canvas2D.height;
+  const centerX = width * 0.5;
+  const centerY = height * 0.5;
+  const fontSize = Math.max(52, Math.min(140, Math.floor(width / 8)));
+  const dotSpacing = Math.max(4, Math.floor(fontSize / 18));
+  const dotRadius = Math.max(1.6, dotSpacing * 0.35);
+  const cacheKey = width + "x" + height + "-" + fontSize + "-" + dotSpacing;
+
+  // Regenerer la carte de points uniquement si la taille change
+  if (drawCenterWelcome.cacheKey !== cacheKey) {
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+    const maskCtx = maskCanvas.getContext("2d");
+
+    maskCtx.clearRect(0, 0, width, height);
+    maskCtx.textAlign = "center";
+    maskCtx.textBaseline = "middle";
+    maskCtx.font = "900 " + fontSize + "px monospace";
+    maskCtx.fillStyle = "#ffffff";
+    maskCtx.fillText("WELCOME", centerX, centerY);
+
+    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+    const points = [];
+    const left = Math.max(0, Math.floor(centerX - fontSize * 3.8));
+    const right = Math.min(width, Math.ceil(centerX + fontSize * 3.8));
+    const top = Math.max(0, Math.floor(centerY - fontSize * 1.1));
+    const bottom = Math.min(height, Math.ceil(centerY + fontSize * 1.1));
+
+    for (let y = top; y < bottom; y += dotSpacing) {
+      for (let x = left; x < right; x += dotSpacing) {
+        const alpha = maskData[(y * width + x) * 4 + 3];
+        if (alpha > 80) {
+          points.push({ x, y });
+        }
+      }
+    }
+
+    drawCenterWelcome.cacheKey = cacheKey;
+    drawCenterWelcome.points = points;
+  }
+
+  const points = drawCenterWelcome.points || [];
+  const tSec = performance.now() * 0.001;
+  const ampX = dotSpacing * 0.9;
+  const ampY = dotSpacing * 0.7;
+
+  ctx2D.shadowColor = "transparent";
+  ctx2D.shadowBlur = 0;
+  ctx2D.shadowOffsetX = 0;
+  ctx2D.shadowOffsetY = 0;
+
+  const grad = ctx2D.createLinearGradient(0, centerY - fontSize, 0, centerY + fontSize);
+  grad.addColorStop(0, "#f2f2f2");
+  grad.addColorStop(0.5, "#cecece");
+  grad.addColorStop(1, "#2b2b2b");
+  
+  // Ombre des points
+  ctx2D.fillStyle = "rgba(0, 0, 0, 0.35)";
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const phase = tSec * 2.2 + p.x * 0.018 + p.y * 0.022;
+    const harmonicX = Math.sin(phase) * 0.7 + Math.cos(phase * 1.33) * 0.3;
+    const harmonicY = Math.cos(phase * 0.93) * 0.65 + Math.sin(phase * 1.41) * 0.35;
+    const zWave = Math.sin(phase * 1.18) * 0.6 + Math.cos(phase * 0.74) * 0.4;
+    const depth = (zWave + 1.0) * 0.5;
+    const px = p.x + harmonicX * ampX;
+    const py = p.y + harmonicY * ampY;
+    const r = dotRadius * (0.72 + depth * 0.6);
+
+    ctx2D.beginPath();
+    ctx2D.arc(px + 1.6, py + 1.6, r, 0, Math.PI * 2);
+    ctx2D.fill();
+  }
+
+  // Points principaux
+  ctx2D.fillStyle = grad;
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const phase = tSec * 2.2 + p.x * 0.018 + p.y * 0.022;
+    const harmonicX = Math.sin(phase) * 0.7 + Math.cos(phase * 1.33) * 0.3;
+    const harmonicY = Math.cos(phase * 0.93) * 0.65 + Math.sin(phase * 1.41) * 0.35;
+    const zWave = Math.sin(phase * 1.18) * 0.6 + Math.cos(phase * 0.74) * 0.4;
+    const depth = (zWave + 1.0) * 0.5;
+    const px = p.x + harmonicX * ampX;
+    const py = p.y + harmonicY * ampY;
+    const r = dotRadius * (0.76 + depth * 0.72);
+    const alpha = 0.5 + depth * 0.5;
+
+    ctx2D.globalAlpha = alpha;
+    ctx2D.beginPath();
+    ctx2D.arc(px, py, r, 0, Math.PI * 2);
+    ctx2D.fill();
+  }
+  ctx2D.globalAlpha = 1;
+
+  // Reinitialiser l'ombre pour les autres rendus
+  ctx2D.shadowColor = "transparent";
+  ctx2D.shadowBlur = 0;
+  ctx2D.shadowOffsetX = 0;
+  ctx2D.shadowOffsetY = 0;
 }
 
 // Fonction pour dessiner le scroll text
@@ -352,6 +473,7 @@ function render() {
   
   // Effacer et dessiner le texte
   ctx2D.clearRect(0, 0, canvas2D.width, canvas2D.height);
+  drawCenterWelcome();
   drawScrollText();
   
   requestAnimationFrame(render);
