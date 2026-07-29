@@ -1,0 +1,13 @@
+<svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond transparent -->
+  <!-- Texte ATOS -->
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#0073E6">
+    ATOS
+  </text>
+  <!-- Ligne de séparation -->
+  <line x1="20" y1="65" x2="180" y2="65" stroke="#FF9900" stroke-width="2"/>
+  <!-- Sous-texte -->
+  <text x="100" y="78" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#FF9900" letter-spacing="2">
+    OPEN SOURCE PROGRAM OFFICE
+  </text>
+</svg>
