@@ -43,6 +43,11 @@ L'animation montre plusieurs effets imbriqués
 - Animation du logo
 - Déformation du texte **welcome** en points
 
+## deployer
+
+Le déploiement vers OSPO s'effectue à partir du menu ISPO 
+
+> Settings > Repository > Mirroring repositories 
 
 
 ## Licence
