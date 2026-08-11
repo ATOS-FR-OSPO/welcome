@@ -227,6 +227,25 @@ gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 const timeLocation = gl.getUniformLocation(program, 'time');
 const resolutionLocation = gl.getUniformLocation(program, 'resolution');
 
+// Variable pour stocker le texte chargé depuis le fichier
+let freeTextContent = "We'd like to welcome you to our ISPO & OSPO demo platform. It's purpose is to demonstrate that ATOS has implemented these initiatives......    ";
+//let freeTextContent = "";
+
+// Charger le fichier textelibre.txt
+(function loadFreeText() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', '../js/textlibre.txt', true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      freeTextContent = xhr.responseText;
+    }
+  };
+  xhr.onerror = function() {
+    console.warn('Could not load textelibre.txt, using default text');
+  };
+  xhr.send();
+})();
+
 // Fonction pour animer le logo avec ondulation horizontale
 function drawAnimatedLogo() {
   if (!logoImage) return;
@@ -437,7 +456,7 @@ function drawScrollText() {
   // Calcul de baseY avec la formule ospoText
   const baseY = Math.max(
     fontSize,
-    height - 100 + Math.sin(tSec * 2.4) * bobAmp
+    height - 250 + Math.sin(tSec * 2.4) * bobAmp
   );
   
   ctx2D.font = "bold " + fontSize + "px Verdana, Arial, Helvetica, sans-serif";
@@ -472,6 +491,48 @@ function drawScrollText() {
   }
 }
 
+// Fonction pour dessiner le texte champ libre scrollant
+function drawFreeText() {
+  const freeText = freeTextContent;
+  const tSec = performance.now() * 0.001;
+  const width = canvas2D.width;
+  const height = canvas2D.height;
+  
+  const fontSize = Math.max(24, Math.min(48, Math.floor(width / 20)));
+  const charStep = fontSize ;
+  const textWidth = charStep * freeText.length;
+  const travel = width + textWidth + 200;
+  const scrollSpeed = 100;
+  const cyclePadding = 120;
+  
+  // Calcul de baseX pour scroller de droite à gauche
+  const baseX = width + cyclePadding - (tSec * scrollSpeed) % travel;
+  const baseY = height - 50;
+  
+  ctx2D.font = fontSize + "px Verdana, Arial, Helvetica, sans-serif";
+  ctx2D.textBaseline = "middle";
+  ctx2D.textAlign = "left";
+  
+  for (let i = 0; i < freeText.length; i++) {
+    const ch = freeText[i];
+    const letterX = baseX + i * charStep;
+    const letterY = baseY;
+    
+    // Ombre
+    ctx2D.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx2D.fillText(ch, letterX + 1, letterY + 1);
+    
+    // Texte en gradient
+    const grad = ctx2D.createLinearGradient(letterX, letterY - fontSize * 0.5, letterX, letterY + fontSize * 0.5);
+    grad.addColorStop(0, "#0073E6");
+    grad.addColorStop(0.5, "#cecece");
+    grad.addColorStop(1, "#0073E6");
+    
+    ctx2D.fillStyle = grad;
+    ctx2D.fillText(ch, letterX, letterY);
+  }
+}
+
 // Boucle d'animation
 let startTime = Date.now();
 
@@ -490,6 +551,7 @@ function render() {
   ctx2D.clearRect(0, 0, canvas2D.width, canvas2D.height);
   drawCenterWelcome();
   drawScrollText();
+  drawFreeText();
   
   requestAnimationFrame(render);
 }
