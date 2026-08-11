@@ -104,7 +104,8 @@ const fragmentShader = `
   
   void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
-    vec2 center = vec2(0.55, 0.5);
+    // Centre dynamique traçant une figure en 8
+    vec2 center = vec2(0.55 + 0.15 * sin(time * 0.5), 0.5 + 0.15 * sin(time * 1.0));
     float aspect = resolution.x / resolution.y;
     
     // Coordonnées distordues
