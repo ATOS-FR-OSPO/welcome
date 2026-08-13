@@ -1,0 +1,74 @@
+ 
+stages:
+  - mirror
+
+variables:
+  GITLAB_API_URL: "https://gitlab.example.com/api/v4"
+
+# Variables GitLab CI/CD à créer :
+#
+# GITLAB_TOKEN
+# GITHUB_PAT
+# GITHUB_USER
+# GITHUB_MIRROR_URL
+#
+# Exemple :
+# https://github.com/ATOS-FR-OSPO/mon-projet.git
+
+create-mirror:
+  stage: mirror
+  image: curlimages/curl:latest
+
+  script:
+    - |
+      echo "Recherche des miroirs existants..."
+
+      MIRROR_ID=$(curl -s \
+        --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        "${GITLAB_API_URL}/projects/${CI_PROJECT_ID}/remote_mirrors" \
+        | grep -o '"id":[0-9]*' \
+        | head -1 \
+        | cut -d':' -f2)
+
+      if [ -n "$MIRROR_ID" ]; then
+        echo "Mirror déjà présent : $MIRROR_ID"
+        exit 0
+      fi
+
+      echo "Création du mirror GitHub..."
+
+      curl --request POST \
+        --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        --form "url=https://${GITHUB_USER}:${GITHUB_PAT}@github.com/ATOS-FR-OSPO/${CI_PROJECT_NAME}.git" \
+        --form "enabled=true" \
+        --form "only_protected_branches=false" \
+        "${GITLAB_API_URL}/projects/${CI_PROJECT_ID}/remote_mirrors"
+
+      echo "Mirror créé"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+sync-mirror:
+  stage: mirror
+  image: curlimages/curl:latest
+
+  script:
+    - |
+      MIRROR_ID=$(curl -s \
+        --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        "${GITLAB_API_URL}/projects/${CI_PROJECT_ID}/remote_mirrors" \
+        | grep -o '"id":[0-9]*' \
+        | head -1 \
+        | cut -d':' -f2)
+
+      echo "Mirror ID = ${MIRROR_ID}"
+
+      curl --request POST \
+        --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+        "${GITLAB_API_URL}/projects/${CI_PROJECT_ID}/remote_mirrors/${MIRROR_ID}/sync"
+
+      echo "Synchronisation demandée"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
