@@ -5,6 +5,23 @@ stages:
 variables:
   GITLAB_API_URL: "https://gitlab.example.com/api/v4"
 
+
+
+
+pages:
+  stage: deploy
+  script:
+    - echo "Copying public dic..."   
+  artifacts:
+    script:
+      - index.html
+  pages: true  # publishes the default public directory      
+
+  only:
+    - master
+
+
+
 # Variables GitLab CI/CD à créer :
 #
 # GITLAB_TOKEN
@@ -72,18 +89,3 @@ sync-mirror:
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-
-
-
-
-pages:
-  stage: deploy
-  script:
-    - echo "Copying public dic..."   
-  artifacts:
-    script:
-      - index.html
-  pages: true  # publishes the default public directory      
-
-  only:
-    - master
